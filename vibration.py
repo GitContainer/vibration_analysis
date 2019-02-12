@@ -73,7 +73,7 @@ def open_all_files_of_given_type(prefix, file_list, ftype):
 
 
 prefix = 'D:\\pub\\Vibration data\\Vibration data'
-ftype = 'pdf'
+ftype = 'csv'
 open_all_files_of_given_type(prefix, file_list, ftype)
         
 ###############################################################################
@@ -127,102 +127,75 @@ plot_all(xl_vibs)
 ###############################################################################
 # Doing fft and plotting the result
 ###############################################################################    
-    
+vib = csv_vibs['30645__raw data acceleration']
 
+n, _ = vib.shape
+d = vib.iloc[1,0] - vib.iloc[0,0]
 
-
-###############################################################################
-# Read data (csv and xl will work)
-###############################################################################
-
-
-
-###############################################################################
-# 3. PDF
-# As of now, pdf is not working. Try Later
-###############################################################################
-filetype = 'pdf'
-filename = file_list[folder][filetype][0]
-full_name = os.path.join(prefix, folder, filename)
-
-os.startfile(full_name)
-
-#pdf_file = open(full_name, 'a')
-#read_pdf = PyPDF2.PdfFileReader(pdf_file)
-
-###############################################################################
-
-
-
-
-###############################################################################
-# read data shared by palani
-###############################################################################
-folder = 'D:\\pub\\old data\\Vibration data\\Vibration data\\LL202'
-file = '30461__raw data acceleration.csv'
-#file = '30645__raw data acceleration.csv'
-full_name = os.path.join(folder, file)
-
-vib = pd.read_csv(full_name, skiprows = 2)
-vib.head()
-
+# visualize the data before plotting
+n_disc = 100
 for i in range(1,4):
-    plt.plot(vib.iloc[100:,0]*100, vib.iloc[100:,i])
-    plt.show()    
-
+    plt.plot(vib.iloc[n_disc:,0], vib.iloc[n_disc:,i])
+    plt.show()
     
-
-# fft of the data
-plt.plot(vib.iloc[100:,1])   
-N = vib.iloc[100:,1].shape[0]
-T = vib.iloc[101,0] - vib.iloc[100,0]
-
-f = np.linspace(0, 1/T, N)
-
-fft = np.fft.fft(vib.iloc[100:,1])
-
-
-plt.plot(f[:N//2], np.abs(fft)[:N//2]*1/N)
-   
 ###############################################################################
-# Exploring FFT
-###############################################################################    
-t = np.linspace(0, 0.5, 500)
-s = np.sin(40 * 2 * np.pi * t) + 0.5 * np.sin(90 * 2 * np.pi * t)
-
-plt.ylabel("Amplitude")
-plt.xlabel("Time [s]")
-plt.plot(t, s)
-plt.show()    
+# get fft
+###############################################################################
+def get_fft(i, n_disc, raw_data):
+    t = raw_data.iloc[n_disc:,0]
+    s = raw_data.iloc[n_disc:,i]
     
-fft = np.fft.fft(s) 
+    n = len(t)
+    d = t.iloc[1] - t.iloc[0]
+    
+    
+    fft = np.fft.fft(s)
+    f= np.fft.fftfreq(n, d)
+    
+    return f, fft
 
-fft = np.fft.fft(s)
-T = t[1] - t[0]  # sampling interval 
-N = s.size
-
-# 1/T = frequency
-f = np.linspace(0, 1 / T, N)
-
-plt.ylabel("Amplitude")
-plt.xlabel("Frequency [Hz]")
-plt.bar(f[:N // 2], np.abs(fft)[:N // 2] * 1 / N, width=1.5)  # 1 / N is a normalization factor
-plt.show()  
-
-
-############################################################################### 
-# another example
-###############################################################################
-import matplotlib.pyplot as plt
-t = np.arange(256)
-sp = np.fft.fft(np.sin(t))
-freq = np.fft.fftfreq(t.shape[-1])
-plt.plot(freq, sp.real) # freq, sp.imag)
-plt.show()    
-
-plt.plot(freq, sp.imag) # freq, sp.imag)
-plt.show()    
+def plot_frequency_spectrum(n_disc, raw_data, name):
+    fig, ax = plt.subplots(3, 1)
+    
+    for i in range(1,4):
+        f, fft = get_fft(i, n_disc, raw_data)
+        n = len(f)
+        ax[i-1].plot(f[:n//2], np.abs(fft)[:n//2]*1/n)
+        ax[i-1].set_ylabel('Acceleration')
         
+        if i == 1:
+            ax[i-1].set_ylim(0, 0.029)
+        
+        if i == 3:
+            ax[i-1].set_ylim(0, 0.06)
+            
+    ax[2].set_xlabel('Frequency (Hz)')
+    ax[0].set_title('FFT: ' + name)
+    
+    plt.subplots_adjust(bottom=0.0, right=0.8, top=0.9)
+    return ax
+        
+       
+for key in csv_vibs:
+    print(key)
+    raw_data = csv_vibs[key]
+    ax = plot_frequency_spectrum(n_disc, raw_data, key)
+    
+n_disc = 300
+key = '27741_raw data acceleration'                
+raw_data = csv_vibs[key]
+ax = plot_frequency_spectrum(n_disc, raw_data, key)    
+
+
+
+###############################################################################
+# getting velocity spectrum
+###############################################################################    
+    
+
+
+
+
     
     
     
