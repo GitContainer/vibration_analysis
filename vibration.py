@@ -157,13 +157,14 @@ def plot_frequency_spectrum(n_disc, raw_data, name):
         f, fft = get_fft(i, n_disc, raw_data)
         n = len(f)
         ax[i-1].plot(f[:n//2], np.abs(fft)[:n//2]*1/n)
-        ax[i-1].set_ylabel('Acceleration')
+        ax[i-1].set_ylabel(key.split('_')[1])
+        ax[i-1].set_xlim(-0.01, 800)
         
         if i == 1:
-            ax[i-1].set_ylim(0, 0.029)
+            ax[i-1].set_ylim(0, 10)
         
         if i == 3:
-            ax[i-1].set_ylim(0, 0.06)
+            ax[i-1].set_ylim(0, 20)
             
     ax[2].set_xlabel('Frequency (Hz)')
     ax[0].set_title('FFT: ' + name)
@@ -294,39 +295,28 @@ for key in csv_vibs:
     raw_data = csv_vibs[key]
     ax = plot_frequency_spectrum(n_disc, raw_data, key)
 
-
-
-
-
 ###############################################################################
 # FFT velocity
 ###############################################################################
-
-
-
+n_disc = 100
+for key in vel_dfs:
+    print(key)
+    if key == '27741_velocity':
+        n_disc = 250
+    raw_data = vel_dfs[key]
+    ax = plot_frequency_spectrum(n_disc, raw_data, key)
 
 
 ###############################################################################
-# plotting the mean centered data
+# FFT displacement
 ###############################################################################
-df = vel_dfs.iloc[250:, :]
-n_disc = 250
-for i in range(1,4):
-    plt.plot(vel_df.iloc[n_disc:,0], vel_df.iloc[n_disc:,i])
-    plt.show()
-
-###############################################################################
-# Get FFT
-###############################################################################
-i = 1 
-f, fft = get_fft(i, n_disc, vel_df)
-n = len(f)
-plt.plot(f[:n//2], np.abs(fft)[:n//2]*1/n)
-plt.ylim(0,0.6)
-plt.xlim(0.01, 800)
-
-
-
+n_disc = 100
+for key in disp_dfs:
+    print(key)
+    if key == '27741_displacement':
+        n_disc = 250
+    raw_data = disp_dfs[key]
+    ax = plot_frequency_spectrum(n_disc, raw_data, key)
 
 
 
