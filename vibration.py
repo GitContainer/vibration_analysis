@@ -8,10 +8,6 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import os
-
-import PyPDF2
-
 
 ###############################################################################
 # Set the working directory
@@ -73,7 +69,7 @@ def open_all_files_of_given_type(prefix, file_list, ftype):
 
 
 prefix = 'D:\\pub\\Vibration data\\Vibration data'
-ftype = 'csv'
+ftype = 'pdf'
 open_all_files_of_given_type(prefix, file_list, ftype)
         
 ###############################################################################
@@ -125,7 +121,7 @@ plot_all(xl_vibs)
 
 
 ###############################################################################
-# Doing fft and plotting the result
+# Visualize the data before plotting
 ###############################################################################    
 vib = csv_vibs['30645__raw data acceleration']
 
@@ -175,28 +171,113 @@ def plot_frequency_spectrum(n_disc, raw_data, name):
     plt.subplots_adjust(bottom=0.0, right=0.8, top=0.9)
     return ax
         
-       
+# All FFT in one go       
 for key in csv_vibs:
     print(key)
     raw_data = csv_vibs[key]
     ax = plot_frequency_spectrum(n_disc, raw_data, key)
-    
+
+# Individual FFT    
 n_disc = 300
 key = '27741_raw data acceleration'                
 raw_data = csv_vibs[key]
 ax = plot_frequency_spectrum(n_disc, raw_data, key)    
 
 
+###############################################################################
+# getting velocity
+###############################################################################        
+csv_vibs.keys()
+ 
+raw_data = csv_vibs['30461__raw data acceleration']
+raw_data = csv_vibs['27741_raw data acceleration']
+# initialize an empty data frame
+def initialize_df(raw_data):
+    cols = raw_data.columns
+    df = pd.DataFrame(columns=cols)
+    return df
+
+# get the velocity/displacement 
+
+def get_velocity(raw_data):
+    
+    df = initialize_df(raw_data)
+    
+    n, _ = raw_data.shape
+    
+    for i in range(n-1):
+    
+        t1, t2 = raw_data.iloc[i:i+2, 0]
+        
+        a1 = raw_data.iloc[i,1:]
+        a2 = raw_data.iloc[i+1,1:]
+                
+        mean_t = (t1 + t2)/2
+        mean_a = (a1 + a2)/2
+        delta_t = (t2 - t1)
+        
+        del_vel = mean_a*delta_t*9806   # 9806 conversion factor from g to mm/s2
+        
+        if i == 0:
+            pre_vel = np.zeros(3)
+        else:
+            pre_vel = vel
+            
+        vel = pre_vel + del_vel
+        vel['Timestamp'] = mean_t
+            
+        df = df.append(vel, ignore_index = True)
+        
+    return df
+
+    
+def removing_trend_by_differencing(df):
+    df_diff = df.diff()
+    df_diff.loc[:,'Timestamp'] = df.loc[:, 'Timestamp']
+    df_diff = df_diff.dropna(axis = 0, how = 'any')
+    return df_diff
+
+
+
+def do_mean_centering(df):
+    df_mean_cent = df - df.mean()
+    df_mean_cent.loc[:,'Timestamp'] = df.loc[:, 'Timestamp']
+    return df_mean_cent
+
+df = get_velocity(raw_data)
+df1 = removing_trend_by_differencing(df)
+df2 = do_mean_centering(df1)
 
 ###############################################################################
-# getting velocity spectrum
-###############################################################################    
-    
+# plotting the mean centered data
+###############################################################################
+n_disc = 250
+for i in range(1,4):
+    plt.plot(df2.iloc[n_disc:,0], df2.iloc[n_disc:,i])
+    plt.show()
+
+###############################################################################
+# Get FFT
+###############################################################################
+i = 1 
+f, fft = get_fft(i, n_disc, df2)
+n = len(f)
+plt.plot(f[:n//2], np.abs(fft)[:n//2]*1/n)
+plt.ylim(0,0.6)
+plt.xlim(0.01, 800)
+
+
+###############################################################################
+# getting velocity method #2
+###############################################################################
 
 
 
 
-    
+
+
+
+ 
     
     
     
