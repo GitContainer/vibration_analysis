@@ -187,10 +187,6 @@ ax = plot_frequency_spectrum(n_disc, raw_data, key)
 ###############################################################################
 # getting velocity
 ###############################################################################        
-csv_vibs.keys()
- 
-raw_data = csv_vibs['30461__raw data acceleration']
-raw_data = csv_vibs['27741_raw data acceleration']
 # initialize an empty data frame
 def initialize_df(raw_data):
     cols = raw_data.columns
@@ -198,13 +194,12 @@ def initialize_df(raw_data):
     return df
 
 # get the velocity/displacement 
-
 def get_velocity(raw_data):
     
     df = initialize_df(raw_data)
     
     n, _ = raw_data.shape
-    
+        
     for i in range(n-1):
     
         t1, t2 = raw_data.iloc[i:i+2, 0]
@@ -237,39 +232,99 @@ def removing_trend_by_differencing(df):
     df_diff = df_diff.dropna(axis = 0, how = 'any')
     return df_diff
 
-
-
 def do_mean_centering(df):
     df_mean_cent = df - df.mean()
     df_mean_cent.loc[:,'Timestamp'] = df.loc[:, 'Timestamp']
     return df_mean_cent
 
-df = get_velocity(raw_data)
-df1 = removing_trend_by_differencing(df)
-df2 = do_mean_centering(df1)
+def get_integ_df(raw_data):    
+    df = get_velocity(raw_data)
+    df1 = removing_trend_by_differencing(df)
+    df2 = do_mean_centering(df1)
+    return df2
+
+def get_all_integ_df(dict_data, name):
+    int_dfs = {}
+    for key in dict_data:
+        raw_data = dict_data[key]
+        int_key = key.split('_')[0] + '_' + name
+        int_df = get_integ_df(raw_data)
+        int_dfs[int_key] = int_df
+    return int_dfs
+    
+vel_dfs = get_all_integ_df(csv_vibs, 'velocity')
+disp_dfs = get_all_integ_df(vel_dfs, 'displacement')
+
+
+###############################################################################
+# Final Analysis
+###############################################################################
+plot_all(csv_vibs)
+plot_all(vel_dfs)
+plot_all(disp_dfs)
+
+###############################################################################
+# velocity plot
+###############################################################################
+n_disc = 100
+for key in vel_dfs:
+    print(key)
+    if key == '27741_velocity':
+        n_disc = 250
+    df = vel_dfs[key]
+    plot_vib_data(key, df.iloc[n_disc:,:])
+    
+
+###############################################################################
+# displacement plot
+###############################################################################
+n_disc = 100
+for key in disp_dfs:
+    print(key)
+    if key == '27741_displacement':
+        n_disc = 250
+    df = disp_dfs[key]
+    plot_vib_data(key, df.iloc[n_disc:,:])
+
+###############################################################################
+# FFT acceleration
+###############################################################################
+for key in csv_vibs:
+    print(key)
+    raw_data = csv_vibs[key]
+    ax = plot_frequency_spectrum(n_disc, raw_data, key)
+
+
+
+
+
+###############################################################################
+# FFT velocity
+###############################################################################
+
+
+
+
 
 ###############################################################################
 # plotting the mean centered data
 ###############################################################################
+df = vel_dfs.iloc[250:, :]
 n_disc = 250
 for i in range(1,4):
-    plt.plot(df2.iloc[n_disc:,0], df2.iloc[n_disc:,i])
+    plt.plot(vel_df.iloc[n_disc:,0], vel_df.iloc[n_disc:,i])
     plt.show()
 
 ###############################################################################
 # Get FFT
 ###############################################################################
 i = 1 
-f, fft = get_fft(i, n_disc, df2)
+f, fft = get_fft(i, n_disc, vel_df)
 n = len(f)
 plt.plot(f[:n//2], np.abs(fft)[:n//2]*1/n)
 plt.ylim(0,0.6)
 plt.xlim(0.01, 800)
 
-
-###############################################################################
-# getting velocity method #2
-###############################################################################
 
 
 
